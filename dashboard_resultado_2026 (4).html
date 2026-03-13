@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Resultados 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap');
+  :root{--bg:#0a0e17;--surface:#111827;--surface2:#1a2235;--border:#1f2d45;--accent:#00d4aa;--accent2:#ff6b35;--accent3:#a78bfa;--text:#e8edf5;--text-muted:#6b7e99;--green:#10b981;--red:#ef4444;--yellow:#f59e0b}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,170,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,170,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+  .wrapper{position:relative;z-index:1;padding:32px;max-width:1400px;margin:0 auto}
+  header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:40px;padding-bottom:24px;border-bottom:1px solid var(--border)}
+  .logo-area h1{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;letter-spacing:-0.5px}
+  .logo-area h1 span{color:var(--accent)}
+  .logo-area p{color:var(--text-muted);font-size:12px;margin-top:4px}
+  .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+  .badge{display:inline-flex;align-items:center;gap:6px;background:rgba(0,212,170,0.1);border:1px solid rgba(0,212,170,0.3);color:var(--accent);padding:4px 12px;border-radius:20px;font-size:11px}
+  .badge::before{content:'●';animation:pulse 2s infinite}
+  .update-info{font-size:10px;color:var(--text-muted)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+  .month-tabs{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
+  .tab{padding:8px 20px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;transition:all 0.2s}
+  .tab:hover{border-color:var(--accent);color:var(--accent)}
+  .tab.active{background:rgba(0,212,170,0.1);border-color:var(--accent);color:var(--accent)}
+  .tab.parcial{border-color:var(--yellow);color:var(--yellow);opacity:0.7}
+  .tab.disabled{opacity:0.25;cursor:not-allowed}
+  .acum-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}
+  .acum-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px 20px}
+  .acum-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px}
+  .acum-val{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-top:6px}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+  .kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px;position:relative;overflow:hidden;animation:fadeUp 0.4s ease both}
+  .kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+  .kpi.ing::after{background:var(--accent)}
+  .kpi.gas::after{background:var(--accent2)}
+  .kpi.res::after{background:var(--accent3)}
+  .kpi.margen::after{background:var(--yellow)}
+  .kpi-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px}
+  .kpi-value{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin:8px 0 4px;line-height:1}
+  .kpi.ing .kpi-value{color:var(--accent)}
+  .kpi.gas .kpi-value{color:var(--accent2)}
+  .kpi.margen .kpi-value{color:var(--yellow)}
+  .kpi-sub{font-size:11px;color:var(--text-muted)}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+  .charts-row-3{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:24px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;animation:fadeUp 0.5s ease both}
+  .card-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+  .card-sub{font-size:11px;color:var(--text-muted);margin-bottom:20px}
+  canvas{max-height:240px}
+  .suc-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .suc-card{background:var(--surface2);border-radius:8px;padding:16px;border:1px solid var(--border)}
+  .suc-name{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+  .suc-val{font-family:'Syne',sans-serif;font-size:18px;font-weight:800}
+  .suc-pct{font-size:11px;color:var(--text-muted);margin-top:4px}
+  .progress-bar{height:4px;background:var(--border);border-radius:2px;margin-top:10px}
+  .progress-fill{height:100%;border-radius:2px}
+  .ramos-table{width:100%;border-collapse:collapse;font-size:12px}
+  .ramos-table th{text-align:left;padding:8px 12px;color:var(--text-muted);font-weight:400;font-size:10px;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border)}
+  .ramos-table td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.03)}
+  .ramos-table tr:hover td{background:rgba(255,255,255,0.02)}
+  .pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px}
+  .pill.green{background:rgba(16,185,129,0.15);color:var(--green)}
+  .gasto-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+  .gasto-item:last-child{border-bottom:none}
+  .gasto-label{font-size:11px;color:var(--text-muted)}
+  .gasto-val{font-size:12px;font-weight:500;color:var(--text)}
+  .gasto-bar-wrap{width:80px;height:3px;background:var(--border);border-radius:2px;margin-left:12px}
+  .gasto-bar-fill{height:100%;border-radius:2px}
+  footer{margin-top:32px;padding-top:20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted)}
+  @media(max-width:900px){.kpis{grid-template-columns:1fr 1fr}.charts-row,.charts-row-3,.acum-strip{grid-template-columns:1fr}.wrapper{padding:16px}}
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <header>
+    <div class="logo-area">
+      <h1>RESULTADO <span>2026</span></h1>
+      <p>Dashboard de Gestión · C. de Bustos + Rosario</p>
+    </div>
+    <div class="header-right">
+      <div class="badge">Datos actualizados</div>
+      <div class="update-info">Última actualización: Marzo 2026</div>
+    </div>
+  </header>
+
+  <div class="month-tabs" id="monthTabs"></div>
+  <div class="acum-strip" id="acumStrip"></div>
+  <div class="kpis" id="kpiGrid"></div>
+
+  <div class="charts-row">
+    <div class="card" style="animation-delay:0.1s">
+      <div class="card-title">Ingresos por Ramo</div>
+      <div class="card-sub" id="ramosChartSub">—</div>
+      <canvas id="chartRamos"></canvas>
+    </div>
+    <div class="card" style="animation-delay:0.2s">
+      <div class="card-title">Ingresos vs Gastos por Sucursal</div>
+      <div class="card-sub" id="sucChartSub">—</div>
+      <canvas id="chartSucursales"></canvas>
+    </div>
+  </div>
+
+  <div class="charts-row-3">
+    <div class="card" style="animation-delay:0.3s">
+      <div class="card-title">Evolución Mensual 2026</div>
+      <div class="card-sub">Ingresos · Gastos · Resultado Neto</div>
+      <canvas id="chartEvolucion"></canvas>
+    </div>
+    <div class="card" style="animation-delay:0.4s">
+      <div class="card-title">Estructura de Gastos</div>
+      <div class="card-sub" id="gastosSubtitle">—</div>
+      <div id="gastosBreakdown"></div>
+    </div>
+  </div>
+
+  <div class="charts-row">
+    <div class="card" style="animation-delay:0.5s">
+      <div class="card-title">Detalle por Sucursal</div>
+      <div class="card-sub" id="sucursalSubtitle">—</div>
+      <div class="suc-grid" id="sucGrid"></div>
+    </div>
+    <div class="card" style="animation-delay:0.6s">
+      <div class="card-title">Ramos — Detalle de Ingresos</div>
+      <div class="card-sub" id="ramosSubtitle">—</div>
+      <table class="ramos-table" id="ramosTable">
+        <thead><tr><th>Ramo</th><th>C. de Bustos</th><th>Rosario</th><th>Total</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>
+    <span>Fuente: RESULTADO 2026.xlsx · Rdos. Mensuales</span>
+    <span>Ene ✅ · Feb ✅ · Mar ⚠️ parcial</span>
+  </footer>
+</div>
+
+<script>
+const MESES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const MESES_FULL=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+const DATA={
+  1:{ingresos:97635172,gastos:77747027,resultadoNeto:19888145,resultadoAntes:52469196,resultadoBruto:83508378,bustos_ing:82129823,rosario_ing:15505350,bustos_gas:65495341,rosario_gas:12251686,
+    ramos:[{n:'ART',cdb:6512926,ros:1723998,tot:8236924},{n:'Seg. Patrimoniales',cdb:25874978,ros:9056290,tot:34931268},{n:'Seg. Personas',cdb:6859700,ros:2021115,tot:8880815},{n:'Granizo',cdb:35824873,ros:2703946,tot:38528819},{n:'Prev. Salud',cdb:3003858,ros:0,tot:3003858},{n:'Banco del Sol',cdb:384409,ros:0,tot:384409}],
+    gastos_d:[{l:'Sueldos y Jornales',v:12624040},{l:'Incentivo Mensual',v:9006823},{l:'Sueldos Familia',v:7983562},{l:'Cargas Sociales',v:2966626}]},
+  2:{ingresos:73453649,gastos:53007560,resultadoNeto:20446089,resultadoAntes:51454540,resultadoBruto:67656464,bustos_ing:59135659,rosario_ing:14317991,bustos_gas:44380419,rosario_gas:8627141,
+    ramos:[{n:'ART',cdb:5050751,ros:1357102,tot:6407853},{n:'Seg. Patrimoniales',cdb:21757844,ros:8782589,tot:30540433},{n:'Seg. Personas',cdb:5336281,ros:1957869,tot:7294150},{n:'Granizo',cdb:18659665,ros:2220431,tot:20880096},{n:'Prev. Salud',cdb:3120082,ros:0,tot:3120082},{n:'Banco del Sol',cdb:1337767,ros:0,tot:1337767}],
+    gastos_d:[{l:'Sueldos y Jornales',v:12277878},{l:'Incentivo Mensual',v:7497542},{l:'Sueldos Familia',v:8282591},{l:'Cargas Sociales',v:2749740}]},
+  3:{ingresos:211190,gastos:0,resultadoNeto:211190,resultadoAntes:211190,resultadoBruto:211190,bustos_ing:211190,rosario_ing:0,bustos_gas:0,rosario_gas:0,
+    ramos:[{n:'ART',cdb:211190,ros:0,tot:211190}],
+    gastos_d:[],parcial:true},
+};
+
+// Estado
+let sel=1, charts={};
+
+function fmt(n){
+  if(n===null||n===undefined||isNaN(n))return'—';
+  const abs=Math.abs(n),sign=n<0?'-':'';
+  if(abs>=1e6)return sign+'$'+(abs/1e6).toFixed(1)+'M';
+  if(abs>=1e3)return sign+'$'+(abs/1e3).toFixed(0)+'K';
+  return sign+'$'+abs.toFixed(0);
+}
+
+function renderTabs(){
+  document.getElementById('monthTabs').innerHTML=MESES.map((m,i)=>{
+    const num=i+1,d=DATA[num];
+    let cls='tab disabled';
+    if(d && d.parcial) cls='tab parcial';
+    else if(d && d.ingresos>0) cls=num===sel?'tab active':'tab';
+    const click=(d&&(d.ingresos>0||d.parcial))?`onclick="selectMonth(${num})"` :'';
+    const tip=d&&d.parcial?' ⚠️':'';
+    return`<button class="${cls}" ${click}>${m}${tip}</button>`;
+  }).join('');
+}
+
+function renderAcum(){
+  let tI=0,tG=0;
+  for(let m=1;m<=sel;m++) if(DATA[m]){tI+=DATA[m].ingresos;tG+=DATA[m].gastos;}
+  const tN=tI-tG,nc=tN>=0?'var(--accent)':'var(--red)';
+  document.getElementById('acumStrip').innerHTML=`
+    <div class="acum-card"><div class="acum-label">▲ Ingresos Acum. YTD</div><div class="acum-val" style="color:var(--accent)">${fmt(tI)}</div></div>
+    <div class="acum-card"><div class="acum-label">▼ Gastos Acum. YTD</div><div class="acum-val" style="color:var(--accent2)">${fmt(tG)}</div></div>
+    <div class="acum-card"><div class="acum-label">= Resultado Neto Acum. YTD</div><div class="acum-val" style="color:${nc}">${fmt(tN)}</div></div>`;
+}
+
+function renderKPIs(d){
+  const margen=d.ingresos>0?(d.resultadoNeto/d.ingresos*100):null;
+  const nc=d.resultadoNeto>=0?'var(--accent3)':'var(--red)';
+  const ms=margen===null?'N/A':(margen>0?'+':'')+margen.toFixed(1)+'%';
+  const mc=!margen||margen<0?'var(--red)':'var(--yellow)';
+  const parcialTag=d.parcial?'<span style="font-size:9px;color:var(--yellow);margin-left:6px">⚠️ PARCIAL</span>':'';
+  document.getElementById('kpiGrid').innerHTML=`
+    <div class="kpi ing"><div class="kpi-label">Total Ingresos${parcialTag}</div><div class="kpi-value">${fmt(d.ingresos)}</div><div class="kpi-sub">CdB: ${fmt(d.bustos_ing)} · Ros: ${fmt(d.rosario_ing)}</div></div>
+    <div class="kpi gas"><div class="kpi-label">Total Gastos</div><div class="kpi-value">${fmt(d.gastos)}</div><div class="kpi-sub">CdB: ${fmt(d.bustos_gas)} · Ros: ${fmt(d.rosario_gas)}</div></div>
+    <div class="kpi res"><div class="kpi-label">Resultado Neto</div><div class="kpi-value" style="color:${nc}">${fmt(d.resultadoNeto)}</div><div class="kpi-sub">Antes Gs.Fijos: ${fmt(d.resultadoAntes)}</div></div>
+    <div class="kpi margen"><div class="kpi-label">Margen Neto</div><div class="kpi-value" style="color:${mc}">${ms}</div><div class="kpi-sub">Res. Bruto: ${fmt(d.resultadoBruto)}</div></div>`;
+}
+
+function renderChartRamos(d,mes){
+  document.getElementById('ramosChartSub').textContent=MESES_FULL[mes-1]+' 2026';
+  const ramos=d.ramos.filter(r=>r.tot>0);
+  const ctx=document.getElementById('chartRamos').getContext('2d');
+  if(charts.ramos)charts.ramos.destroy();
+  if(!ramos.length){ctx.clearRect(0,0,400,240);ctx.fillStyle='#6b7e99';ctx.font='12px DM Mono';ctx.textAlign='center';ctx.fillText('Sin datos de ramos',200,120);return;}
+  charts.ramos=new Chart(ctx,{type:'doughnut',data:{labels:ramos.map(r=>r.n),datasets:[{data:ramos.map(r=>r.tot),backgroundColor:['#00d4aa','#ff6b35','#a78bfa','#f59e0b','#06b6d4','#ec4899'],borderWidth:0,hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'bottom',labels:{color:'#6b7e99',font:{family:'DM Mono',size:10},padding:10,boxWidth:10}},tooltip:{callbacks:{label:c=>` ${c.label}: ${fmt(c.raw)}`},backgroundColor:'#1a2235',titleColor:'#e8edf5',bodyColor:'#6b7e99',borderColor:'#1f2d45',borderWidth:1}}}});
+}
+
+function renderChartSuc(d,mes){
+  document.getElementById('sucChartSub').textContent=MESES_FULL[mes-1]+' 2026';
+  const ctx=document.getElementById('chartSucursales').getContext('2d');
+  if(charts.suc)charts.suc.destroy();
+  charts.suc=new Chart(ctx,{type:'bar',data:{labels:['C. de Bustos','Rosario'],datasets:[{label:'Ingresos',data:[d.bustos_ing,d.rosario_ing],backgroundColor:'rgba(0,212,170,0.7)',borderRadius:4},{label:'Gastos',data:[d.bustos_gas,d.rosario_gas],backgroundColor:'rgba(255,107,53,0.7)',borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{labels:{color:'#6b7e99',font:{family:'DM Mono',size:10}}},tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${fmt(c.raw)}`},backgroundColor:'#1a2235',titleColor:'#e8edf5',bodyColor:'#6b7e99',borderColor:'#1f2d45',borderWidth:1}},
+      scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#6b7e99',font:{family:'DM Mono',size:10}}},y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#6b7e99',font:{family:'DM Mono',size:10},callback:v=>fmt(v)}}}}});
+}
+
+function renderChartEvol(){
+  const ms=Object.keys(DATA).map(Number).filter(m=>DATA[m].ingresos>0||DATA[m].gastos>0).sort((a,b)=>a-b);
+  const ctx=document.getElementById('chartEvolucion').getContext('2d');
+  if(charts.evol)charts.evol.destroy();
+  charts.evol=new Chart(ctx,{type:'bar',data:{labels:ms.map(m=>MESES[m-1]+(DATA[m].parcial?' ⚠️':'')),datasets:[
+    {label:'Ingresos',data:ms.map(m=>DATA[m].ingresos),backgroundColor:'rgba(0,212,170,0.6)',borderRadius:4},
+    {label:'Gastos',data:ms.map(m=>DATA[m].gastos),backgroundColor:'rgba(255,107,53,0.6)',borderRadius:4},
+    {label:'Resultado Neto',data:ms.map(m=>DATA[m].resultadoNeto),type:'line',borderColor:'#a78bfa',backgroundColor:'rgba(167,139,250,0.1)',borderWidth:2,pointRadius:5,pointBackgroundColor:'#a78bfa',fill:true,tension:0.3,yAxisID:'y1'}
+  ]},options:{responsive:true,maintainAspectRatio:true,
+    plugins:{legend:{labels:{color:'#6b7e99',font:{family:'DM Mono',size:10}}},tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${fmt(c.raw)}`},backgroundColor:'#1a2235',titleColor:'#e8edf5',bodyColor:'#6b7e99',borderColor:'#1f2d45',borderWidth:1}},
+    scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#6b7e99',font:{family:'DM Mono',size:10}}},y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#6b7e99',font:{family:'DM Mono',size:10},callback:v=>fmt(v)}},y1:{position:'right',grid:{display:false},ticks:{color:'#a78bfa',font:{family:'DM Mono',size:10},callback:v=>fmt(v)}}}}});
+}
+
+function renderGastos(d,mes){
+  document.getElementById('gastosSubtitle').textContent=MESES_FULL[mes-1]+' 2026';
+  const colors=['#00d4aa','#ff6b35','#a78bfa','#f59e0b'];
+  if(!d.gastos_d.length){document.getElementById('gastosBreakdown').innerHTML='<div style="color:var(--text-muted);font-size:12px;padding:20px 0;text-align:center">Sin datos de gastos</div>';return;}
+  const mx=Math.max(...d.gastos_d.map(g=>g.v));
+  document.getElementById('gastosBreakdown').innerHTML=d.gastos_d.map((g,i)=>{
+    const w=(g.v/mx*100).toFixed(0);
+    return`<div class="gasto-item"><div class="gasto-label">${g.l}</div><div style="display:flex;align-items:center;gap:8px"><span class="gasto-val">${fmt(g.v)}</span><div class="gasto-bar-wrap"><div class="gasto-bar-fill" style="width:${w}%;background:${colors[i%colors.length]}"></div></div></div></div>`;
+  }).join('');
+}
+
+function renderSucDetail(d,mes){
+  document.getElementById('sucursalSubtitle').textContent=MESES_FULL[mes-1]+' 2026';
+  const tot=d.bustos_ing+d.rosario_ing;
+  const pB=tot>0?(d.bustos_ing/tot*100).toFixed(1):0;
+  const pR=tot>0?(d.rosario_ing/tot*100).toFixed(1):0;
+  const nB=d.bustos_ing-d.bustos_gas,nR=d.rosario_ing-d.rosario_gas;
+  document.getElementById('sucGrid').innerHTML=`
+    <div class="suc-card"><div class="suc-name">📍 C. de Bustos</div><div class="suc-val" style="color:var(--accent)">${fmt(d.bustos_ing)}</div><div class="suc-pct">${pB}% ingresos · Neto: <span style="color:${nB>=0?'var(--green)':'var(--red)'}">${fmt(nB)}</span></div><div class="progress-bar"><div class="progress-fill" style="width:${pB}%;background:#00d4aa"></div></div></div>
+    <div class="suc-card"><div class="suc-name">📍 Rosario</div><div class="suc-val" style="color:var(--accent3)">${fmt(d.rosario_ing)}</div><div class="suc-pct">${pR}% ingresos · Neto: <span style="color:${nR>=0?'var(--green)':'var(--red)'}">${fmt(nR)}</span></div><div class="progress-bar"><div class="progress-fill" style="width:${pR}%;background:#a78bfa"></div></div></div>`;
+}
+
+function renderRamosTable(d,mes){
+  document.getElementById('ramosSubtitle').textContent=MESES_FULL[mes-1]+' 2026';
+  const rows=d.ramos.filter(r=>r.tot>0);
+  document.querySelector('#ramosTable tbody').innerHTML=rows.length
+    ?rows.map(r=>`<tr><td>${r.n}</td><td>${fmt(r.cdb)}</td><td>${fmt(r.ros)}</td><td><span class="pill green">${fmt(r.tot)}</span></td></tr>`).join('')
+    :'<tr><td colspan="4" style="color:var(--text-muted);text-align:center;padding:20px">Sin datos de ramos</td></tr>';
+}
+
+function render(mes){
+  const d=DATA[mes];if(!d)return;
+  renderAcum();renderKPIs(d);renderChartRamos(d,mes);renderChartSuc(d,mes);
+  renderChartEvol();renderGastos(d,mes);renderSucDetail(d,mes);renderRamosTable(d,mes);
+}
+
+function selectMonth(mes){sel=mes;renderTabs();render(mes);}
+renderTabs();render(sel);
+</script>
+</body>
+</html>
